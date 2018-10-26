@@ -1,0 +1,9 @@
+.idea/
+.vscode/
+debug
+.DS_Store
+*.log
+acme_access_logger.log
+acme_app_logger.log
+settings/settings.dev.yml
+acmelog
