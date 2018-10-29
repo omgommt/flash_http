@@ -27,8 +27,9 @@ const (
 
 var muxEnableAutoHystrix sync.Mutex
 var enableAutoHystrix bool
+var autoHystrixConfig map[string]int
 
-var hystrixDefault string
+const hystrixDefault = "hystrixDefaultCommand"
 
 var muxHystrixCommandMap sync.Mutex
 var hystrixCommandMap = map[string]*hystrix.CommandConfig{}
@@ -65,14 +66,15 @@ func SetHystixCommand(commandName string, configDetail map[string]int) {
 	log(false,"New SetHystixCommand=", commandName)
 }
 
-func SetHystrixDefaultCommand(configDetail map[string]int)  {
+func SetHystrixDefaultCommandConfig(configDetail map[string]int)  {
 	SetHystixCommand(hystrixDefault, configDetail)
 }
 
-func EnableAutoHystrixDefault(enable bool)  {
+func EnableAutoHystrixDefault(enable bool, configDetail map[string]int)  {
 	muxEnableAutoHystrix.Lock()
 	defer muxEnableAutoHystrix.Unlock()
 	enableAutoHystrix = enable
+	autoHystrixConfig = configDetail
 }
 
 func GetHystrixDefaultCommand() string{
@@ -89,7 +91,7 @@ func GetHystrixAutoKey(urlPath string) string {
 	}
 	key := u.Hostname()+ ":" + u.Port()
 	if _, ok := hystrixCommandMap[key]; !ok{
-		SetHystixCommand(key, nil)
+		SetHystixCommand(key, autoHystrixConfig)
 	}
 	return key
 }
