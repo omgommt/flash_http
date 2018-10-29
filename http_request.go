@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/valyala/fasthttp"
 )
@@ -15,7 +14,13 @@ const FLASH_HTTP = "flash_http"
 
 
 type LOG func(isError bool, args ...interface{})
-var log LOG
+var log LOG = func(isError bool, args ...interface{}) {
+	if isError{
+		fmt.Sprint("Error", args)
+	} else {
+		fmt.Sprint("Info", args)
+	}
+}
 
 func SetLogger(logger LOG){
 	log = logger
