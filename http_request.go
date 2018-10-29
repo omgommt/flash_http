@@ -32,11 +32,8 @@ func (request *HTTPRequest) prepareFastHttpRequest() *fasthttp.Request {
 	httpHeaders := &httpRequest.Header
 
 	httpRequest.SetRequestURI(request.URL)
-	switch request.RequestType {
-	case http.MethodGet:
-		httpRequest.Header.SetMethod(http.MethodGet)
-	case http.MethodPost:
-		httpRequest.Header.SetMethod(http.MethodPost)
+	httpRequest.Header.SetMethod(request.RequestType)
+	if request.RequestType != http.MethodGet{
 		httpRequest.SetBody(request.Body)
 	}
 	if httpRequest != nil {
