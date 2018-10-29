@@ -87,13 +87,13 @@ func updateMetrics(urlStr string, startTime time.Time, responseStatus int, args 
 }
 
 // Common http service for all external calls, in sync
-func DoFlashHttp(request *HTTPRequest) *HTTPResponse {
+func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error) {
 	var responseData []byte
 	startTime := time.Now()
 	log(false,"FLASH HTTP REQUEST BODY, ", string(request.Body))
 	httpRequest := request.prepareFastHttpRequest()
 
-	responseObject := HTTPResponse{}
+	responseObject = &HTTPResponse{}
 	if httpRequest != nil {
 		httpResponse := fasthttp.AcquireResponse()
 		proxy := request.Proxy
@@ -101,9 +101,9 @@ func DoFlashHttp(request *HTTPRequest) *HTTPResponse {
 		hystrixKey := request.GetHystrixCommand()
 		if hystrixKey != "" {
 			log(false,"Hystrix Command=", hystrixKey)
-			err := hystrix.Do(hystrixKey, func() error {
+			err = hystrix.Do(hystrixKey, func() error {
 				log(false,"Hystrix hit -> ", request.URL)
-				err := doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
+				err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
 				if err != nil {
 					log(false,"hystrix.Do error1 ", err)
 					return err
@@ -115,6 +115,7 @@ func DoFlashHttp(request *HTTPRequest) *HTTPResponse {
 				return nil
 			}, func(e error) error {
 				respData = nil
+				err = e
 				log(false,"hystrix.Do error2", e, request.URL)
 				return nil
 			})
@@ -123,7 +124,7 @@ func DoFlashHttp(request *HTTPRequest) *HTTPResponse {
 			}
 		} else {
 			log(false,"Non-Hystrix hit -> ", request.URL)
-			err := doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
+			err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
 			if err != nil {
 				responseObject.HttpStatus = http.StatusGatewayTimeout
 				log(false,"client.Do error ", err)
@@ -139,7 +140,7 @@ func DoFlashHttp(request *HTTPRequest) *HTTPResponse {
 	responseObject.Body = responseData
 	log(false, "FLASH HTTP RESPONSE BODY, ", string(responseData))
 	updateMetrics(request.URL, startTime, responseObject.HttpStatus)
-	return &responseObject
+	return responseObject, err
 }
 
 //// GoFlashHttp Common http service to communicate with external calls in async with goroutines. Use go prefix.
