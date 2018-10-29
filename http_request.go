@@ -141,7 +141,7 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 
 	responseObject.Body = responseData
 	log(false, "FLASH HTTP RESPONSE BODY, ", string(responseData))
-	updateMetrics(request.URL, startTime, responseObject.HttpStatus)
+	go updateMetrics(request.URL, startTime, responseObject.HttpStatus)
 	return responseObject, err
 }
 
