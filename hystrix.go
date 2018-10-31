@@ -32,13 +32,10 @@ var autoHystrixConfig map[string]int
 const hystrixDefault = "hystrixDefaultCommand"
 
 var muxHystrixCommandMap sync.Mutex
-var hystrixCommandMap = map[string]*hystrix.CommandConfig{}
+var hystrixCommandMap = map[string]bool
 
 // SetHystixCommand
 func SetHystixCommand(commandName string, configDetail map[string]int) {
-	muxHystrixCommandMap.Lock()
-	defer muxHystrixCommandMap.Unlock()
-
 	hysConfig := hystrix.CommandConfig{
 		Timeout:                HYSTRIX_TIMEOUT_DEFAULT,
 		MaxConcurrentRequests:  HYSTRIX_CONCURRENCY_DEFAULT,
@@ -61,9 +58,14 @@ func SetHystixCommand(commandName string, configDetail map[string]int) {
 	if recheckTime, ok := configDetail[HYSTRIX_RECHECK_TIME_KEY]; ok {
 		hysConfig.SleepWindow = recheckTime
 	}
-	hystrix.ConfigureCommand(commandName, hysConfig)
-	hystrixCommandMap[commandName] = &hysConfig
-	log(false,"New SetHystixCommand=", commandName)
+
+	muxHystrixCommandMap.Lock()
+	defer muxHystrixCommandMap.Unlock()
+	if _, ok := hystrixCommandMap[commandName]; !ok{
+		hystrix.ConfigureCommand(commandName, hysConfig)
+		hystrixCommandMap[commandName] = true
+		log(false,"New SetHystixCommand=", commandName)
+	}
 }
 
 func SetHystrixDefaultCommandConfig(configDetail map[string]int)  {

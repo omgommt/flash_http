@@ -108,6 +108,7 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 				err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
 				if err != nil {
 					log(false,"hystrix.Do error1 ", err)
+					responseObject.HttpStatus = http.StatusGatewayTimeout
 					return err
 				}
 				if httpResponse.StatusCode() >= http.StatusInternalServerError {
@@ -117,9 +118,8 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 				return nil
 			}, func(e error) error {
 				respData = nil
-				err = e
 				log(false,"hystrix.Do error2", e, request.URL)
-				return nil
+				return e
 			})
 			if err != nil {
 				log(false,"hystrix.Do init error", err)
