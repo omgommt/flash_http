@@ -32,7 +32,7 @@ var autoHystrixConfig map[string]int
 const hystrixDefault = "hystrixDefaultCommand"
 
 var muxHystrixCommandMap sync.Mutex
-var hystrixCommandMap = map[string]bool
+var hystrixCommandMap = map[string]bool{}
 
 // SetHystixCommand
 func SetHystixCommand(commandName string, configDetail map[string]int) {
