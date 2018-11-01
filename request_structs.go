@@ -14,6 +14,7 @@ type HTTPRequest struct {
 	Body           []byte
 	Headers        map[string]string
 	HystrixCommand string
+	Timeout 	   int
 	TimeoutInMs    int // timeout in milli second
 	AuthType       int
 	Proxy          string
@@ -33,7 +34,11 @@ func (r *HTTPRequest) GetHystrixCommand() string{
 }
 
 func (r *HTTPRequest) GetTimeOut() time.Duration {
-	return time.Duration(r.TimeoutInMs)*time.Millisecond
+	if r.Timeout != 0{
+		return time.Duration(r.Timeout)*time.Second
+	} else {
+		return time.Duration(r.TimeoutInMs)*time.Millisecond
+	}
 }
 
 func NewHTTPRequest() *HTTPRequest {
