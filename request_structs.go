@@ -18,6 +18,7 @@ type HTTPRequest struct {
 	TimeoutInMs    int // timeout in milli second
 	AuthType       int
 	Proxy          string
+	SkipErrorHandler bool
 	AuthData       map[string]string
 }
 
