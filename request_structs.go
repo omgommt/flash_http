@@ -14,7 +14,7 @@ type HTTPRequest struct {
 	Body           []byte
 	Headers        map[string]string
 	HystrixCommand string
-	Timeout 	   int
+	Timeout 	   int // depreciate
 	TimeoutInMs    int // timeout in milli second
 	AuthType       int
 	Proxy          string

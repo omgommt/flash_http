@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/valyala/fasthttp"
@@ -26,6 +27,13 @@ func SetLogger(logger LOG){
 	log = logger
 }
 
+type ErrorHandlerType func(errorType uint8, errMsg string, hystrixKey string, url string)
+var errorHandler ErrorHandlerType = func(errorType uint8, errMsg string, hystrixKey string, url string) {
+}
+
+func SetErrorHandler(errorHandlerObj ErrorHandlerType){
+	errorHandler = errorHandlerObj
+}
 
 func (request *HTTPRequest) prepareFastHttpRequest() *fasthttp.Request {
 	httpRequest := fasthttp.AcquireRequest()
@@ -88,6 +96,19 @@ func updateMetrics(urlStr string, startTime time.Time, responseStatus int, args 
 	return metricUpdateFunction(urlStr, startTime, responseStatus, args)
 }
 
+func handleFlashError(hystrixKey string, url string, err error){
+	if errorHandler != nil {
+		errMsg := err.Error()
+		errType := ERROR_OTHER
+		if strings.Contains(errMsg,"circuit") {
+			errType = ERROR_CIRCUIT_OPEN
+		} else if strings.Contains(errMsg,"timeout"){
+			errType = ERROR_TIMEOUT
+		}
+		errorHandler(errType, errMsg, hystrixKey, url)
+	}
+}
+
 // Common http service for all external calls, in sync
 func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error) {
 	var responseData []byte
@@ -108,6 +129,7 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 				err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
 				if err != nil {
 					log(false,"hystrix.Do error1 ", err)
+					handleFlashError(hystrixKey, request.URL, err)
 					responseObject.HttpStatus = http.StatusGatewayTimeout
 					return err
 				}
@@ -118,18 +140,20 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 				return nil
 			}, func(e error) error {
 				respData = nil
-				log(false,"hystrix.Do error2", e, request.URL)
+				log(true,"hystrix.Do error2", e, request.URL)
+				handleFlashError(hystrixKey, request.URL, e)
 				return e
 			})
 			if err != nil {
-				log(false,"hystrix.Do init error", err)
+				log(true,"hystrix.Do init error", err)
 			}
 		} else {
 			log(false,"Non-Hystrix hit -> ", request.URL)
 			err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
 			if err != nil {
 				responseObject.HttpStatus = http.StatusGatewayTimeout
-				log(false,"client.Do error ", err)
+				log(true,"client.Do error ", err)
+				handleFlashError(hystrixKey, request.URL, err)
 			}
 			respData = getBodyBytes(httpRequest, httpResponse)
 		}

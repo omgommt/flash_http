@@ -19,3 +19,9 @@ const (
 	AUTH_KEY_USERNAME  = "username"
 	AUTH_KEY_PASSWORD  = "password"
 )
+
+const (
+	ERROR_TIMEOUT uint8 = iota + 1
+	ERROR_CIRCUIT_OPEN
+	ERROR_OTHER
+)
