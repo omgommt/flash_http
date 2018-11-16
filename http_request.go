@@ -96,7 +96,10 @@ func updateMetrics(urlStr string, startTime time.Time, responseStatus int, args 
 	return metricUpdateFunction(urlStr, startTime, responseStatus, args)
 }
 
-func handleFlashError(hystrixKey string, url string, err error){
+func handleFlashError(hystrixKey string, url string, err error, skipError bool){
+	if skipError {
+		return
+	}
 	if errorHandler != nil {
 		errMsg := err.Error()
 		errType := ERROR_OTHER
@@ -129,7 +132,7 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 				err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
 				if err != nil {
 					log(false,"hystrix.Do error1 ", err)
-					handleFlashError(hystrixKey, request.URL, err)
+					handleFlashError(hystrixKey, request.URL, err, request.SkipErrorHandler)
 					responseObject.HttpStatus = http.StatusGatewayTimeout
 					return err
 				}
@@ -141,7 +144,7 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 			}, func(e error) error {
 				respData = nil
 				log(true,"hystrix.Do error2", e, request.URL)
-				handleFlashError(hystrixKey, request.URL, e)
+				handleFlashError(hystrixKey, request.URL, e, request.SkipErrorHandler)
 				return e
 			})
 			if err != nil {
@@ -153,7 +156,7 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 			if err != nil {
 				responseObject.HttpStatus = http.StatusGatewayTimeout
 				log(true,"client.Do error ", err)
-				handleFlashError(hystrixKey, request.URL, err)
+				handleFlashError(hystrixKey, request.URL, err, request.SkipErrorHandler)
 			}
 			respData = getBodyBytes(httpRequest, httpResponse)
 		}
