@@ -2,6 +2,7 @@ package flash_http
 
 import (
 	"time"
+	"sync"
 )
 
 const (
@@ -21,6 +22,9 @@ type HTTPRequest struct {
 	SkipErrorHandler bool
 	AuthData       map[string]string
 }
+
+var defaultTimeOutInMs = 2000
+var muxDefaultTimeOutInMs sync.Mutex
 
 func (r *HTTPRequest) GetHystrixCommand() string{
 	if len(r.HystrixCommand) > 0 {
@@ -42,9 +46,15 @@ func (r *HTTPRequest) GetTimeOut() time.Duration {
 	}
 }
 
+func SetDefaultTimeOut(timeout int ){
+	muxDefaultTimeOutInMs.Lock()
+	defer muxDefaultTimeOutInMs.Unlock()
+	defaultTimeOutInMs = timeout
+}
+
 func NewHTTPRequest() *HTTPRequest {
 	request := HTTPRequest{}
-	request.TimeoutInMs = 2*1000
+	request.TimeoutInMs = defaultTimeOutInMs
 	return &request
 }
 
