@@ -27,6 +27,13 @@ func SetLogger(logger LOG){
 	log = logger
 }
 
+func logData(skipLog bool, isError bool, args ...interface{}){
+	if skipLog {
+		return
+	}
+	log(isError, args)
+}
+
 type ErrorHandlerType func(errorType uint8, errMsg string, hystrixKey string, url string)
 var errorHandler ErrorHandlerType = func(errorType uint8, errMsg string, hystrixKey string, url string) {
 }
@@ -55,19 +62,19 @@ func (request *HTTPRequest) prepareFastHttpRequest() *fasthttp.Request {
 			httpHeaders.Set("Authorization", token)
 		}
 	}
-	log(false,"httpHeaders ", httpHeaders.String(), "  ")
+	logData(request.GetSkipLogs(), false,"httpHeaders ", httpHeaders.String(), "  ")
 	return httpRequest
 }
 
 func doClient(httpRequest *fasthttp.Request, httpResponse *fasthttp.Response, proxy string, timeout time.Duration) error {
 	defer func() {
-		log(false,"Response headers ", httpResponse.Header.String(), "End")
+		logData(false,false,"Response headers ", httpResponse.Header.String(), "End")
 	}()
 	if proxy == "" {
 		client := &fasthttp.Client{}
 		return client.DoTimeout(httpRequest, httpResponse, timeout)
 	} else {
-		log(false, "proxy", proxy)
+		logData(false, false, "proxy", proxy)
 		client := &fasthttp.HostClient{
 			Addr: proxy,
 		}
@@ -75,8 +82,8 @@ func doClient(httpRequest *fasthttp.Request, httpResponse *fasthttp.Response, pr
 	}
 }
 
-func getBodyBytes(httpRequest *fasthttp.Request, httpResponse *fasthttp.Response) (res []byte) {
-	log(false, "Response Headers ", string(httpResponse.Header.Header()))
+func getBodyBytes(httpRequest *fasthttp.Request, httpResponse *fasthttp.Response, skipLogs bool) (res []byte) {
+	logData(skipLogs, false, "Response Headers ", string(httpResponse.Header.Header()))
 	if httpRequest.Header.HasAcceptEncoding("gzip") {
 		res, _ = httpResponse.BodyGunzip()
 	} else {
@@ -86,7 +93,9 @@ func getBodyBytes(httpRequest *fasthttp.Request, httpResponse *fasthttp.Response
 }
 
 type MetricUpdateFuncType func(urlStr string, startTime time.Time, responseStatus int, args ...interface{}) error
-var metricUpdateFunction MetricUpdateFuncType
+var metricUpdateFunction MetricUpdateFuncType = func(urlStr string, startTime time.Time, responseStatus int, args ...interface{}) error {
+	return nil
+}
 
 func SetMetricUpdateFunc(metricUpdateFunc MetricUpdateFuncType) {
 	metricUpdateFunction = metricUpdateFunc
@@ -116,7 +125,7 @@ func handleFlashError(hystrixKey string, url string, err error, skipError bool){
 func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error) {
 	var responseData []byte
 	startTime := time.Now()
-	log(false,"FLASH HTTP REQUEST BODY, ", string(request.Body))
+	logData(request.GetSkipLogs(),false,"FLASH HTTP REQUEST BODY, ", string(request.Body))
 	httpRequest := request.prepareFastHttpRequest()
 
 	responseObject = &HTTPResponse{}
@@ -126,12 +135,12 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 		var respData []byte
 		hystrixKey := request.GetHystrixCommand()
 		if hystrixKey != "" {
-			log(false,"Hystrix Command=", hystrixKey)
+			logData(request.GetSkipLogs(),false,"Hystrix Command=", hystrixKey)
 			err = hystrix.Do(hystrixKey, func() error {
-				log(false,"Hystrix hit -> ", request.URL)
+				logData(request.GetSkipLogs(),false,"Hystrix hit -> ", request.URL)
 				err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
 				if err != nil {
-					log(false,"hystrix.Do error1 ", err)
+					logData(request.GetSkipLogs(),false,"hystrix.Do error1 ", err)
 					//handleFlashError(hystrixKey, request.URL, err, request.SkipErrorHandler)
 					responseObject.HttpStatus = http.StatusGatewayTimeout
 					return err
@@ -139,26 +148,26 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 				if httpResponse.StatusCode() >= http.StatusInternalServerError {
 					return errors.New(fmt.Sprintf("HttpStatus code == %d", httpResponse.StatusCode()))
 				}
-				respData = getBodyBytes(httpRequest, httpResponse)
+				respData = getBodyBytes(httpRequest, httpResponse, request.GetSkipLogs())
 				return nil
 			}, func(e error) error {
 				respData = nil
-				log(true,"hystrix.Do error2", e, request.URL)
+				logData(request.GetSkipLogs(),true,"hystrix.Do error2", e, request.URL)
 				handleFlashError(hystrixKey, request.URL, e, request.SkipErrorHandler)
 				return e
 			})
 			if err != nil {
-				log(true,"hystrix.Do init error", err)
+				logData(request.GetSkipLogs(),true,"hystrix.Do init error", err)
 			}
 		} else {
-			log(false,"Non-Hystrix hit -> ", request.URL)
+			logData(request.GetSkipLogs(),false,"Non-Hystrix hit -> ", request.URL)
 			err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut())
 			if err != nil {
 				responseObject.HttpStatus = http.StatusGatewayTimeout
-				log(true,"client.Do error ", err)
+				logData(request.GetSkipLogs(),true,"client.Do error ", err)
 				handleFlashError(hystrixKey, request.URL, err, request.SkipErrorHandler)
 			}
-			respData = getBodyBytes(httpRequest, httpResponse)
+			respData = getBodyBytes(httpRequest, httpResponse, request.GetSkipLogs())
 		}
 		if responseObject.HttpStatus == 0 {
 			responseObject.HttpStatus = httpResponse.StatusCode()
@@ -167,7 +176,7 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 	}
 
 	responseObject.Body = responseData
-	log(false, "FLASH HTTP RESPONSE BODY, ", string(responseData))
+	logData(request.GetSkipLogs(),false, "FLASH HTTP RESPONSE BODY, ", string(responseData))
 	go updateMetrics(request.URL, startTime, responseObject.HttpStatus)
 	return responseObject, err
 }

@@ -64,7 +64,7 @@ func SetHystixCommand(commandName string, configDetail map[string]int) {
 	if _, ok := hystrixCommandMap[commandName]; !ok{
 		hystrix.ConfigureCommand(commandName, hysConfig)
 		hystrixCommandMap[commandName] = true
-		log(false,"New SetHystixCommand=", commandName)
+		logData(false, false,"New SetHystixCommand=", commandName)
 	}
 }
 

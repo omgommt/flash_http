@@ -20,6 +20,7 @@ type HTTPRequest struct {
 	AuthType       int
 	Proxy          string
 	SkipErrorHandler bool
+	SkipLogs		 bool
 	AuthData       map[string]string
 }
 
@@ -44,6 +45,10 @@ func (r *HTTPRequest) GetTimeOut() time.Duration {
 	} else {
 		return time.Duration(r.TimeoutInMs)*time.Millisecond
 	}
+}
+
+func (r *HTTPRequest) GetSkipLogs() bool {
+	return r.SkipLogs
 }
 
 func SetDefaultTimeOut(timeout int ){
