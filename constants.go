@@ -21,7 +21,8 @@ const (
 )
 
 const (
-	ERROR_TIMEOUT uint8 = iota + 1
-	ERROR_CIRCUIT_OPEN
-	ERROR_OTHER
+	ERROR_TIMEOUT         = "hystrix_timeout"
+	ERROR_CIRCUIT_OPEN    = "hystrix_circuit_open"
+	ERROR_MAX_CONCURRENCY = "hystrix_max_concurrency"
+	ERROR_OTHER           = "unknown"
 )

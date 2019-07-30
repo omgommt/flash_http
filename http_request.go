@@ -14,12 +14,12 @@ import (
 const FLASH_HTTP = "flash_http"
 
 
-type LOG func(isError bool, args ...interface{})
-var log LOG = func(isError bool, args ...interface{}) {
-	if isError{
-		fmt.Sprint("Error", args)
+type LOG func(errType string, args ...interface{})
+var log LOG = func(errType string, args ...interface{}) {
+	if errType !=  "" {
+		fmt.Println("Error", args)
 	} else {
-		fmt.Sprint("Info", args)
+		fmt.Println("Info", args)
 	}
 }
 
@@ -31,16 +31,13 @@ func logData(skipLog bool, isError bool, args ...interface{}){
 	if skipLog {
 		return
 	}
-	log(isError, args)
+	errType := ""
+	if isError {
+		errType = ERROR_OTHER
+	}
+	log(errType, args)
 }
 
-type ErrorHandlerType func(errorType uint8, errMsg string, hystrixKey string, url string)
-var errorHandler ErrorHandlerType = func(errorType uint8, errMsg string, hystrixKey string, url string) {
-}
-
-func SetErrorHandler(errorHandlerObj ErrorHandlerType){
-	errorHandler = errorHandlerObj
-}
 
 func (request *HTTPRequest) prepareFastHttpRequest() *fasthttp.Request {
 	httpRequest := fasthttp.AcquireRequest()
@@ -109,15 +106,18 @@ func handleFlashError(hystrixKey string, url string, err error, skipError bool){
 	if skipError {
 		return
 	}
-	if errorHandler != nil {
+
+	if log != nil {
 		errMsg := err.Error()
 		errType := ERROR_OTHER
 		if strings.Contains(errMsg,"circuit") {
 			errType = ERROR_CIRCUIT_OPEN
+		} else if strings.Contains(errMsg,"max concurrency"){
+			errType = ERROR_MAX_CONCURRENCY
 		} else if strings.Contains(errMsg,"timeout"){
 			errType = ERROR_TIMEOUT
 		}
-		errorHandler(errType, errMsg, hystrixKey, url)
+		log(errType, fmt.Sprintf("hystrixKey=%s, URL=%s, Error=%s", hystrixKey, url, errMsg))
 	}
 }
 
@@ -153,7 +153,7 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 			}, func(e error) error {
 				respData = nil
 				logData(request.GetSkipLogs(),true,"hystrix.Do error2", e, request.URL)
-				handleFlashError(hystrixKey, request.URL, e, request.SkipErrorHandler)
+				handleFlashError(hystrixKey, request.URL, e, request.GetSkipLogs())
 				return e
 			})
 			if err != nil {
@@ -165,7 +165,6 @@ func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error)
 			if err != nil {
 				responseObject.HttpStatus = http.StatusGatewayTimeout
 				logData(request.GetSkipLogs(),true,"client.Do error ", err)
-				handleFlashError(hystrixKey, request.URL, err, request.SkipErrorHandler)
 			}
 			respData = getBodyBytes(httpRequest, httpResponse, request.GetSkipLogs())
 		}

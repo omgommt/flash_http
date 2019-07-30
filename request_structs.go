@@ -1,8 +1,8 @@
 package flash_http
 
 import (
-	"time"
 	"sync"
+	"time"
 )
 
 const (
@@ -15,12 +15,11 @@ type HTTPRequest struct {
 	Body           []byte
 	Headers        map[string]string
 	HystrixCommand string
-	Timeout 	   int // depreciate
+	Timeout        int // depreciate
 	TimeoutInMs    int // timeout in milli second
 	AuthType       int
 	Proxy          string
-	SkipErrorHandler bool
-	SkipLogs		 bool
+	SkipLogs       bool
 	AuthData       map[string]string
 }
 
