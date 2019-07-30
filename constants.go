@@ -24,5 +24,6 @@ const (
 	ERROR_TIMEOUT         = "hystrix_timeout"
 	ERROR_CIRCUIT_OPEN    = "hystrix_circuit_open"
 	ERROR_MAX_CONCURRENCY = "hystrix_max_concurrency"
+	ERROR_FLASH_OTHER     = "flash_unknown"
 	ERROR_OTHER           = "unknown"
 )

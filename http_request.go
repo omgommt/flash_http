@@ -109,7 +109,7 @@ func handleFlashError(hystrixKey string, url string, err error, skipError bool){
 
 	if log != nil {
 		errMsg := err.Error()
-		errType := ERROR_OTHER
+		errType := ERROR_FLASH_OTHER
 		if strings.Contains(errMsg,"circuit") {
 			errType = ERROR_CIRCUIT_OPEN
 		} else if strings.Contains(errMsg,"max concurrency"){
