@@ -35,3 +35,14 @@ func TestFlashHttpSkipLogs(t *testing.T) {
 		t.Errorf("Flashhttp blank body")
 	}
 }
+
+func TestFlashHttpErrorHandled(t *testing.T) {
+	request := NewHTTPRequest()
+	request.URL = "https://www.google.unknown.com"
+	res, err := DoFlashHttp(request)
+	if err == nil {
+		t.Errorf("Flashhttp no error ")
+	} else if res.HttpStatus == http.StatusOK {
+		t.Errorf("Flashhttp status = %v", res.HttpStatus)
+	}
+}
