@@ -31,10 +31,6 @@ func (r *HTTPRequest) GetHystrixCommand() string{
 		return r.HystrixCommand
 	}
 	key := GetHystrixAutoKey(r.URL)
-	if len(key) > 0{
-		return key
-	}
-	key = GetHystrixDefaultCommand()
 	return key
 }
 
