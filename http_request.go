@@ -43,6 +43,10 @@ func (request *HTTPRequest) prepareFastHttpRequest() *fasthttp.Request {
 	httpRequest := fasthttp.AcquireRequest()
 	httpHeaders := &httpRequest.Header
 
+	if request.DisableNormalizing {
+		httpHeaders.DisableNormalizing()
+	}
+
 	httpRequest.SetRequestURI(request.URL)
 	httpRequest.Header.SetMethod(request.RequestType)
 	if request.RequestType != http.MethodGet{

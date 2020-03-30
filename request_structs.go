@@ -10,23 +10,24 @@ const (
 )
 
 type HTTPRequest struct {
-	URL            string
-	RequestType    string
-	Body           []byte
-	Headers        map[string]string
-	HystrixCommand string
-	Timeout        int // depreciate
-	TimeoutInMs    int // timeout in milli second
-	AuthType       int
-	Proxy          string
-	SkipLogs       bool
-	AuthData       map[string]string
+	URL                string
+	RequestType        string
+	Body               []byte
+	Headers            map[string]string
+	DisableNormalizing bool
+	HystrixCommand     string
+	Timeout            int // depreciate
+	TimeoutInMs        int // timeout in milli second
+	AuthType           int
+	Proxy              string
+	SkipLogs           bool
+	AuthData           map[string]string
 }
 
 var defaultTimeOutInMs = 2000
 var muxDefaultTimeOutInMs sync.Mutex
 
-func (r *HTTPRequest) GetHystrixCommand() string{
+func (r *HTTPRequest) GetHystrixCommand() string {
 	if len(r.HystrixCommand) > 0 {
 		return r.HystrixCommand
 	}
@@ -35,10 +36,10 @@ func (r *HTTPRequest) GetHystrixCommand() string{
 }
 
 func (r *HTTPRequest) GetTimeOut() time.Duration {
-	if r.Timeout != 0{
-		return time.Duration(r.Timeout)*time.Second
+	if r.Timeout != 0 {
+		return time.Duration(r.Timeout) * time.Second
 	} else {
-		return time.Duration(r.TimeoutInMs)*time.Millisecond
+		return time.Duration(r.TimeoutInMs) * time.Millisecond
 	}
 }
 
@@ -46,7 +47,7 @@ func (r *HTTPRequest) GetSkipLogs() bool {
 	return r.SkipLogs
 }
 
-func SetDefaultTimeOut(timeout int ){
+func SetDefaultTimeOut(timeout int) {
 	muxDefaultTimeOutInMs.Lock()
 	defer muxDefaultTimeOutInMs.Unlock()
 	defaultTimeOutInMs = timeout
@@ -59,6 +60,6 @@ func NewHTTPRequest() *HTTPRequest {
 }
 
 type HTTPResponse struct {
-	Body           []byte
-	HttpStatus	   int
+	Body       []byte
+	HttpStatus int
 }
