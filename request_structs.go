@@ -22,6 +22,8 @@ type HTTPRequest struct {
 	Proxy              string
 	SkipLogs           bool
 	AuthData           map[string]string
+	// Max number redirection for a url, If response contains redirect http status code i.e. 301/302/303
+	// Default 0 means redirection is disabled
 	RedirectCount      int
 }
 
