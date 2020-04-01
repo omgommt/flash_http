@@ -22,6 +22,7 @@ type HTTPRequest struct {
 	Proxy              string
 	SkipLogs           bool
 	AuthData           map[string]string
+	RedirectCount      int
 }
 
 var defaultTimeOutInMs = 2000

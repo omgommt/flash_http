@@ -8,7 +8,7 @@ import (
 func TestFlashHttp(t *testing.T) {
 	request := NewHTTPRequest()
 	request.URL = "https://www.google.com"
-	res, err := DoFlashHttp(request, 0)
+	res, err := DoFlashHttp(request)
 	if err != nil {
 		t.Errorf("Flashhttp error %v ", err)
 	} else if res == nil {
@@ -25,7 +25,7 @@ func TestFlashHttpSkipLogs(t *testing.T) {
 	request := NewHTTPRequest()
 	request.URL = "https://www.google.com"
 	request.SkipLogs = true
-	res, err := DoFlashHttp(request, 0)
+	res, err := DoFlashHttp(request)
 	if err != nil {
 		t.Errorf("Flashhttp error %v ", err)
 	} else if res == nil {
@@ -40,7 +40,7 @@ func TestFlashHttpSkipLogs(t *testing.T) {
 func TestFlashHttpErrorHandled(t *testing.T) {
 	request := NewHTTPRequest()
 	request.URL = "https://www.google.unknown.com"
-	res, err := DoFlashHttp(request, 0)
+	res, err := DoFlashHttp(request)
 	if err == nil {
 		t.Errorf("Flashhttp no error ")
 	} else if res.HttpStatus == http.StatusOK {
@@ -51,7 +51,8 @@ func TestFlashHttpErrorHandled(t *testing.T) {
 func TestFlashHttpWithReDirect(t *testing.T) {
 	request := NewHTTPRequest()
 	request.URL = "https://www.google.com"
-	res, err := DoFlashHttp(request, 1)
+	request.RedirectCount = 2
+	res, err := DoFlashHttp(request)
 	if err != nil {
 		t.Errorf("Flashhttp error %v ", err)
 	} else if res == nil {

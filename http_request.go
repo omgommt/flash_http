@@ -135,7 +135,7 @@ func handleFlashError(hystrixKey string, url string, body string, err error, ski
 }
 
 // Common http service for all external calls, in sync
-func DoFlashHttp(request *HTTPRequest, redirectCount int) (responseObject *HTTPResponse, err error) {
+func DoFlashHttp(request *HTTPRequest) (responseObject *HTTPResponse, err error) {
 	var responseData []byte
 	startTime := time.Now()
 	logData(request.GetSkipLogs(), false, "FLASH HTTP REQUEST BODY, ", string(request.Body))
@@ -151,7 +151,7 @@ func DoFlashHttp(request *HTTPRequest, redirectCount int) (responseObject *HTTPR
 			logData(request.GetSkipLogs(), false, "Hystrix Command=", hystrixKey)
 			err = hystrix.Do(hystrixKey, func() error {
 				logData(request.GetSkipLogs(), false, "Hystrix hit -> ", request.URL)
-				err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut(), redirectCount)
+				err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut(), request.RedirectCount)
 				if err != nil {
 					logData(request.GetSkipLogs(), true, "hystrix.Do error1 ", err)
 					//handleFlashError(hystrixKey, request.URL, err, request.SkipErrorHandler)
@@ -173,7 +173,7 @@ func DoFlashHttp(request *HTTPRequest, redirectCount int) (responseObject *HTTPR
 			}
 		} else {
 			logData(request.GetSkipLogs(), false, "Non-Hystrix hit -> ", request.URL)
-			err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut(), redirectCount)
+			err = doClient(httpRequest, httpResponse, proxy, request.GetTimeOut(), request.RedirectCount)
 			if err != nil {
 				responseObject.HttpStatus = http.StatusGatewayTimeout
 				logData(request.GetSkipLogs(), true, "client.Do error ", err)
