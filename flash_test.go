@@ -48,9 +48,23 @@ func TestFlashHttpErrorHandled(t *testing.T) {
 	}
 }
 
+func TestFlashHttpErrorHandledWithReDirect(t *testing.T) {
+	request := NewHTTPRequest()
+	request.URL = "https://www.google.com/url?q=https://mail.google.com/mail"
+	request.RedirectCount = 1
+	res, err := DoFlashHttp(request)
+	if err == nil {
+		t.Errorf("Flashhttp no error")
+	} else if res.HttpStatus == http.StatusOK {
+		t.Errorf("Flashhttp status = %v", res.HttpStatus)
+	}
+
+}
+
+//Test with correct number of redirects
 func TestFlashHttpWithReDirect(t *testing.T) {
 	request := NewHTTPRequest()
-	request.URL = "https://www.google.com"
+	request.URL = "https://www.google.com/url?q=https://mail.google.com/mail"
 	request.RedirectCount = 2
 	res, err := DoFlashHttp(request)
 	if err != nil {
@@ -64,4 +78,3 @@ func TestFlashHttpWithReDirect(t *testing.T) {
 	}
 
 }
-
